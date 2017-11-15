@@ -5,20 +5,19 @@ library(stringr); library(readxl)
 library(RCurl);   library(XML);
 library(plyr)
 
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
 articleList = unique(read_excel("articleDF.xlsx"))
-attach(articleList)
-detach(articleList)
-topic = length(unique(articleList$topic)); topic ## 討論串主題
 
-author = length(unique(articleList$author)); author ## 作者
-poster = unique(articleList$author[which(articleList$isReply==0)]); length(poster) ## 樓主
+# Data Type Convert
+articleList$author = trim(articleList$author)
+articleList$popular = gsub(",","",articleList$popular)
+articleList$popular = as.numeric(articleList$popular)
+articleList$postDate = as.POSIXct(articleList$postDate, format="%Y-%m-%d %H:%M")
 
-Cv = ddply(articleList, c("authorLevel"), summarise,FF = length(topic))
-Cv = ddply(articleList, c("topic"), summarise, popular=popular)
-arrange(articleList)
-sortedData[[100,8]]
+#作者模型Author Model
+authorModel = ddply( articleList, c("author"), summarise, memberLev=max(authorLevel),personalStanding=max(standing),firstPost=min(postDate),lastPost=max(postDate),postNum=length(topic))
 
+#文章模型Article Model
+articleModel = ddply( articleList, c("topic"), summarise, popular=max(popular),replyNum=max(replyNo), author=author[1])
 
-
-table(Cv$author, Cv$FF)
-table(Cv$FF)
